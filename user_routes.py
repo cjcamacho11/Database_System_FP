@@ -48,3 +48,62 @@ def create_user():
         return jsonify({"message": "User added successfully"}), 201
     except Exception as e:
         return jsonify({"error": f"Failed to add user: {e}"}), 500
+
+
+# PUT: Update a user
+@api.route("/users/<int:user_id>", methods=["PUT"])
+def update_user(user_id):
+    data = request.get_json()
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute(
+            "UPDATE Users SET username = ?, email = ? WHERE user_id = ?",
+            (data["username"], data["email"], user_id)
+        )
+        conn.commit()
+        conn.close()
+        return jsonify({"message": "User updated successfully"}), 200
+    except Exception as e:
+        return jsonify({"error": f"Failed to update user: {e}"}), 500
+
+# DELETE: Remove a user
+@api.route("/users/<int:user_id>", methods=["DELETE"])
+def delete_user(user_id):
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+
+        # Delete related records in Likes table
+        cursor.execute("DELETE FROM Likes WHERE user_id = ?", user_id)
+
+        # Delete related records in Follows table
+        cursor.execute("DELETE FROM Follows WHERE follower_id = ? OR followed_id = ?", user_id, user_id)
+
+        # Delete related records in Activity_Feed table
+        cursor.execute("DELETE FROM Activity_Feed WHERE user_id = ?", user_id)
+
+        # Delete related records in Playlist_Songs table
+        cursor.execute("DELETE FROM Playlist_Songs WHERE playlist_id IN (SELECT playlist_id FROM Playlists WHERE user_id = ?)", user_id)
+
+        # Delete related records in Playlists table
+        cursor.execute("DELETE FROM Playlists WHERE user_id = ?", user_id)
+
+        # Delete related records in Comments table
+        cursor.execute("DELETE FROM Comments WHERE user_id = ?", user_id)
+
+        # Delete related records in Notifications table
+        cursor.execute("DELETE FROM Notifications WHERE user_id = ?", user_id)
+
+        # Delete related records in Reports table
+        cursor.execute("DELETE FROM Reports WHERE user_id = ?", user_id)
+
+        # Now delete the user from the Users table
+        cursor.execute("DELETE FROM Users WHERE user_id = ?", user_id)
+
+        conn.commit()
+        conn.close()
+
+        return jsonify({"message": "User and related records deleted successfully"}), 200
+    except Exception as e:
+        return jsonify({"error": f"Failed to delete user: {e}"}), 500
