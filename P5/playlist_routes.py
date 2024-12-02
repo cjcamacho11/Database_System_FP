@@ -2,10 +2,8 @@ import pyodbc
 from flask import Blueprint, jsonify, request
 from config import DB_CONFIG
 
-# Create a Blueprint for playlist-related routes
 playlist_routes = Blueprint('playlist_routes', __name__)
 
-# Helper function to get database connection
 def get_db_connection():
     return pyodbc.connect(
         f"DRIVER={{{DB_CONFIG['DRIVER']}}};SERVER={DB_CONFIG['SERVER']};"
@@ -82,9 +80,7 @@ def delete_playlist(playlist_id):
         conn = get_db_connection()
         cursor = conn.cursor()
 
-        # First, delete associated records from Playlist_Songs
         cursor.execute("DELETE FROM Playlist_Songs WHERE playlist_id = ?", (playlist_id,))
-        # Then, delete the playlist
         cursor.execute("DELETE FROM Playlists WHERE playlist_id = ?", (playlist_id,))
         
         conn.commit()
